@@ -69,11 +69,25 @@ Checks run after the gold build and fail the pipeline on any violation: silver a
 - **Fixed FX rates.** Spend is normalised to DKK with a small reference-rate map. A real system would source live rates; the map is a documented simplification.
 - **Dependency-light.** One runtime dependency (DuckDB). Tests use an in-memory database, so the suite is fast and hermetic.
 
+## PySpark parity
+
+The silver-to-gold fact build is also expressed as a PySpark job in
+`campaignflow/spark_fact.py` — the same DataFrame engine Databricks runs. It
+consumes the silver events and the conformed dimensions and recomputes the fact
+grain, so the two engines are compared on the aggregation, not on key assignment.
+A parity test (`tests/test_spark_fact.py`) asserts the PySpark fact is cent-exact
+identical to the DuckDB fact. This needs a JRE (`sudo apt-get install -y
+default-jre`, or any Java 17/21); `pyspark` is a dev dependency, so it is exercised
+by the test suite but not required to `run` the DuckDB pipeline.
+
 ## Roadmap
 
-The core above is complete and stands alone. Planned extensions:
+The core above is complete and stands alone. Shipped extensions:
 
-1. **PySpark transform stage:** re-express the silver-to-gold fact build as a PySpark job (the same DataFrame engine Databricks runs), with a parity test against the DuckDB fact.
+1. ~~**PySpark transform stage**~~ — done (see *PySpark parity* above).
+
+Planned extensions:
+
 2. **Terraform (Azurite / LocalStack):** provision a local blob landing zone for bronze as infrastructure-as-code.
 3. **Next.js / TypeScript dashboard:** charts over the gold marts (spend / CTR / cost-per-conversion by channel over time).
 4. **docker-compose:** run the whole stack with one command.
