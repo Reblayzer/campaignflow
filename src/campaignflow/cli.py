@@ -8,6 +8,11 @@ def build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("--db", default="campaignflow.duckdb", help="DuckDB file path.")
     run_p.add_argument("--rows", type=int, default=5000, help="Approx raw rows to generate.")
     run_p.add_argument("--seed", type=int, default=42, help="Deterministic seed.")
+    run_p.add_argument(
+        "--landing-zone",
+        action="store_true",
+        help="Land raw in the blob landing zone (Azurite/Azure) and read bronze from az://.",
+    )
     report_p = sub.add_parser("report", help="Print example analytics from the gold marts.")
     report_p.add_argument("--db", default="campaignflow.duckdb")
     return parser
@@ -22,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "run":
         from campaignflow.pipeline import run
 
-        run(db_path=args.db, rows=args.rows, seed=args.seed)
+        run(db_path=args.db, rows=args.rows, seed=args.seed, use_landing_zone=args.landing_zone)
         return 0
     if args.command == "report":
         from campaignflow.report import print_report

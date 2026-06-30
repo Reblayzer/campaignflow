@@ -1,9 +1,14 @@
 from campaignflow import __version__
-from campaignflow.cli import main
+from campaignflow.cli import build_parser, main
 
 
 def test_version_is_set():
     assert isinstance(__version__, str) and __version__
+
+
+def test_run_parser_exposes_landing_zone_flag():
+    assert build_parser().parse_args(["run", "--landing-zone"]).landing_zone is True
+    assert build_parser().parse_args(["run"]).landing_zone is False
 
 
 def test_cli_no_args_prints_help_and_returns_zero(capsys):

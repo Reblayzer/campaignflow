@@ -10,3 +10,10 @@ data/raw/*
 *.egg-info/
 build/
 dist/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+crash.log
