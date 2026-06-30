@@ -5,6 +5,18 @@ RAW_DIR = Path("data/raw")
 SCHEMAS = ("bronze", "silver", "gold")
 FX_TO_DKK = {"DKK": 1.0, "EUR": 7.46, "SEK": 0.64}
 
+# Blob landing zone (Azure). Azurite's well-known public emulator account is a
+# documented dev default, not a secret; override at runtime via the
+# AZURE_STORAGE_CONNECTION_STRING environment variable for real Azure.
+LANDING_CONTAINER = "bronze-landing"
+LANDING_BLOB = "campaign_events.csv"
+AZURITE_CONNECTION_STRING = (
+    "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
+    "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/"
+    "K1SZFPTOtr/KBHBeksoGMGw==;"
+    "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+)
+
 CHANNELS = [
     {"name": "Paid Search", "group": "Paid"},
     {"name": "Paid Social", "group": "Paid"},

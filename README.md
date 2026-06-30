@@ -80,15 +80,45 @@ identical to the DuckDB fact. This needs a JRE (`sudo apt-get install -y
 default-jre`, or any Java 17/21); `pyspark` is a dev dependency, so it is exercised
 by the test suite but not required to `run` the DuckDB pipeline.
 
+## Blob landing zone (Terraform + Azurite)
+
+Bronze can ingest raw campaign files from an Azure Blob **landing zone** instead
+of local disk. The landing zone is infrastructure-as-code under `infra/terraform/`:
+
+- `infra/terraform/azure/` — the **production** landing zone (`azurerm`): resource
+  group, storage account, and a private blob container.
+- `infra/terraform/local/` — the same container on the **Azurite** emulator.
+  `azurerm` targets the Azure control plane, which Azurite does not emulate, so the
+  container is created through the blob data plane; `terraform apply` here stands up
+  a runnable landing zone with no cloud account.
+
+End-to-end locally:
+
+```bash
+docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite \
+  azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+terraform -chdir=infra/terraform/local init && terraform -chdir=infra/terraform/local apply
+
+pip install -e ".[dev]"          # brings in azure-storage-blob
+python -m campaignflow run --landing-zone   # upload raw to blob, read bronze from az://
+```
+
+The pipeline uploads the generated CSV to the container and bronze reads it back
+via DuckDB's `azure` extension (`read_csv('az://…')`), producing an identical
+warehouse to the on-disk path. The blob tests skip when Azurite is unreachable, so
+the suite stays green without Docker; CI starts Azurite and runs them for real. The
+Azurite connection string is the well-known public emulator account; override it
+for real Azure with `AZURE_STORAGE_CONNECTION_STRING`.
+
 ## Roadmap
 
 The core above is complete and stands alone. Shipped extensions:
 
 1. ~~**PySpark transform stage**~~ — done (see *PySpark parity* above).
+2. ~~**Terraform blob landing zone (Azurite)**~~ — done (see *Blob landing zone* above).
 
 Planned extensions:
 
-2. **Terraform (Azurite / LocalStack):** provision a local blob landing zone for bronze as infrastructure-as-code.
 3. **Next.js / TypeScript dashboard:** charts over the gold marts (spend / CTR / cost-per-conversion by channel over time).
 4. **docker-compose:** run the whole stack with one command.
 
