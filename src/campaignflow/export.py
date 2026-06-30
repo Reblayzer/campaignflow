@@ -1,4 +1,9 @@
+import json
+from pathlib import Path
+
 import duckdb
+
+from campaignflow.config import SEED
 
 _TOTALS = """
 select
@@ -69,3 +74,18 @@ def build_marts(con: duckdb.DuckDBPyConnection, generated_at: str, seed: int) ->
         "channels": channels,
         "monthly": monthly,
     }
+
+
+def export_marts(
+    db_path: str, out_path: str | Path, generated_at: str, seed: int = SEED
+) -> dict:
+    """Export the gold marts to a JSON file the dashboard reads at build time."""
+    con = duckdb.connect(db_path, read_only=True)
+    try:
+        marts = build_marts(con, generated_at=generated_at, seed=seed)
+    finally:
+        con.close()
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(marts, indent=2) + "\n")
+    return marts

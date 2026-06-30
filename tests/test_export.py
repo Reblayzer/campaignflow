@@ -1,8 +1,12 @@
+import json
+from pathlib import Path
+
 from campaignflow.bronze import load_raw
 from campaignflow.db import connect
-from campaignflow.export import build_marts
+from campaignflow.export import build_marts, export_marts
 from campaignflow.generate import generate_raw
 from campaignflow.gold import build_gold
+from campaignflow.pipeline import run
 from campaignflow.silver import build_silver
 
 
@@ -33,3 +37,17 @@ def test_build_marts_shape_and_reconciliation(tmp_path):
     # JSON-serialisable primitives only (no Decimal)
     assert isinstance(marts["totals"]["spend_dkk"], float)
     assert isinstance(marts["totals"]["conversions"], int)
+
+
+def test_export_marts_writes_file_and_matches_fact(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    db = str(tmp_path / "cf.duckdb")
+    run(db_path=db, rows=800, seed=21)
+
+    out = tmp_path / "marts.json"
+    marts = export_marts(db, out, generated_at="2026-06-30T00:00:00Z", seed=21)
+
+    on_disk = json.loads(Path(out).read_text())
+    assert on_disk == marts
+    assert on_disk["totals"]["conversions"] > 0
+    assert len(on_disk["channels"]) == 6  # six channels in config
