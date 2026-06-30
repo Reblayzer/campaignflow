@@ -1,0 +1,11 @@
+from campaignflow.pipeline import run
+
+
+def test_run_builds_all_layers_and_is_idempotent(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # raw data lands under tmp
+    db = str(tmp_path / "cf.duckdb")
+    first = run(db_path=db, rows=800, seed=21)
+    assert first["bronze"] > 0 and first["silver"] > 0
+    assert first["gold"]["fact_campaign_performance"] > 0
+    second = run(db_path=db, rows=800, seed=21)
+    assert first["gold"] == second["gold"]  # deterministic + idempotent
