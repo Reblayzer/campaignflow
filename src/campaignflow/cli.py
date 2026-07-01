@@ -15,6 +15,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     report_p = sub.add_parser("report", help="Print example analytics from the gold marts.")
     report_p.add_argument("--db", default="campaignflow.duckdb")
+    export_p = sub.add_parser("export", help="Export gold marts to JSON for the dashboard.")
+    export_p.add_argument("--db", default="campaignflow.duckdb", help="DuckDB file path.")
+    export_p.add_argument(
+        "--out",
+        default="dashboard/public/data/marts.json",
+        help="Output JSON path for the dashboard.",
+    )
     return parser
 
 
@@ -33,6 +40,15 @@ def main(argv: list[str] | None = None) -> int:
         from campaignflow.report import print_report
 
         print_report(db_path=args.db)
+        return 0
+    if args.command == "export":
+        from datetime import UTC, datetime
+
+        from campaignflow.export import export_marts
+
+        generated_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        export_marts(db_path=args.db, out_path=args.out, generated_at=generated_at)
+        print(f"exported marts to {args.out}")
         return 0
     parser.print_help()
     return 0

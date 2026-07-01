@@ -16,3 +16,9 @@ def test_cli_no_args_prints_help_and_returns_zero(capsys):
     out = capsys.readouterr().out
     assert code == 0
     assert "campaignflow" in out.lower()
+
+
+def test_export_parser_has_db_and_out_defaults():
+    args = build_parser().parse_args(["export"])
+    assert args.db == "campaignflow.duckdb"
+    assert args.out == "dashboard/public/data/marts.json"

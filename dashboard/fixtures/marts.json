@@ -1,0 +1,92 @@
+{
+  "generated_at": "2026-06-30T10:58:35Z",
+  "seed": 42,
+  "totals": {
+    "spend_dkk": 7983590.25,
+    "ctr_pct": 3.17,
+    "cost_per_conversion": 194.13,
+    "conversions": 41125
+  },
+  "channels": [
+    {
+      "channel_group": "Earned",
+      "channel_name": "Organic Social",
+      "spend_dkk": 1670985.72,
+      "clicks": 137377,
+      "conversions": 9518,
+      "ctr_pct": 3.17,
+      "cost_per_conversion": 175.56
+    },
+    {
+      "channel_group": "Owned",
+      "channel_name": "Email",
+      "spend_dkk": 1240819.81,
+      "clicks": 66956,
+      "conversions": 4549,
+      "ctr_pct": 3.01,
+      "cost_per_conversion": 272.77
+    },
+    {
+      "channel_group": "Paid",
+      "channel_name": "Affiliate",
+      "spend_dkk": 572601.21,
+      "clicks": 56036,
+      "conversions": 3773,
+      "ctr_pct": 3.15,
+      "cost_per_conversion": 151.76
+    },
+    {
+      "channel_group": "Paid",
+      "channel_name": "Display",
+      "spend_dkk": 1213347.21,
+      "clicks": 112895,
+      "conversions": 6709,
+      "ctr_pct": 3.3,
+      "cost_per_conversion": 180.85
+    },
+    {
+      "channel_group": "Paid",
+      "channel_name": "Paid Search",
+      "spend_dkk": 1629789.3,
+      "clicks": 124403,
+      "conversions": 7513,
+      "ctr_pct": 3.16,
+      "cost_per_conversion": 216.93
+    },
+    {
+      "channel_group": "Paid",
+      "channel_name": "Paid Social",
+      "spend_dkk": 1656047.0,
+      "clicks": 139670,
+      "conversions": 9063,
+      "ctr_pct": 3.17,
+      "cost_per_conversion": 182.73
+    }
+  ],
+  "monthly": [
+    {
+      "year_month": "2026-01",
+      "spend_dkk": 2310847.91,
+      "ctr_pct": 3.15,
+      "cost_per_conversion": 213.77
+    },
+    {
+      "year_month": "2026-02",
+      "spend_dkk": 1974900.39,
+      "ctr_pct": 3.38,
+      "cost_per_conversion": 201.54
+    },
+    {
+      "year_month": "2026-03",
+      "spend_dkk": 1874533.74,
+      "ctr_pct": 3.17,
+      "cost_per_conversion": 185.1
+    },
+    {
+      "year_month": "2026-04",
+      "spend_dkk": 1823308.21,
+      "ctr_pct": 3.01,
+      "cost_per_conversion": 175.5
+    }
+  ]
+}

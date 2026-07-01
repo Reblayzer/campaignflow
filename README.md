@@ -110,16 +110,31 @@ the suite stays green without Docker; CI starts Azurite and runs them for real. 
 Azurite connection string is the well-known public emulator account; override it
 for real Azure with `AZURE_STORAGE_CONNECTION_STRING`.
 
+## Dashboard
+
+A static Next.js + TypeScript dashboard over the gold marts lives in `dashboard/`.
+The Python side exports the marts to JSON; the app renders them with Recharts —
+no database or server at runtime.
+
+```bash
+python -m campaignflow run                 # build the warehouse
+python -m campaignflow export              # -> dashboard/public/data/marts.json
+cd dashboard && npm ci && npm run dev      # http://localhost:3000
+```
+
+Tests: `cd dashboard && npm test` (Vitest + Testing Library) run against a committed
+fixture, so the Node suite needs no Python. CI builds and tests the app in its own job.
+
 ## Roadmap
 
 The core above is complete and stands alone. Shipped extensions:
 
 1. ~~**PySpark transform stage**~~ — done (see *PySpark parity* above).
 2. ~~**Terraform blob landing zone (Azurite)**~~ — done (see *Blob landing zone* above).
+3. ~~**Next.js / TypeScript dashboard**~~ — done (see *Dashboard* above).
 
 Planned extensions:
 
-3. **Next.js / TypeScript dashboard:** charts over the gold marts (spend / CTR / cost-per-conversion by channel over time).
 4. **docker-compose:** run the whole stack with one command.
 
 ## Development
