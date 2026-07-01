@@ -15,7 +15,7 @@
 - The dashboard's **static architecture is unchanged**: `page.tsx` still imports `public/data/marts.json` at build time. Compose orders services so that import target is fresh; no app code changes.
 - The committed `dashboard/public/data/marts.json` **stays in the repo** (lets the app build standalone); the pipeline overwrites it at runtime inside the container.
 - Dashboard must listen on `0.0.0.0:3000` inside the container so the published port is reachable from the host.
-- CI smoke test must assert **both** HTTP 200 **and** that the server-rendered footer contains `seed 42` (proves fresh marts flowed build→render, not just liveness).
+- CI smoke test must assert **both** that the page serves HTTP 200 **and** that the served static marts (`/data/marts.json`) contains `"seed": 42` (proves the marts contract was built and served, not just liveness). Note: do NOT grep the rendered HTML for `seed 42` — React SSR inserts a hydration comment between the `seed ` text node and the `{marts.seed}` expression (`seed <!-- -->42`), so that literal never appears. Assert against the served JSON instead. Freshness is proven separately: the `pipeline` service runs to completion as part of `up`.
 - Conventional commits, scoped. Stage specific files only.
 
 ---
@@ -201,7 +201,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 40s
+      start_period: 120s      # headroom: the container runs `next build` before it serves
 
 volumes:
   marts:
@@ -214,20 +214,16 @@ Expected: prints the normalized config with both `pipeline` and `dashboard` serv
 
 - [ ] **Step 3: Bring the stack up and assert it serves fresh marts**
 
-Run:
+Use `--wait` so Compose blocks until the pipeline exits 0 and the dashboard is healthy (no arbitrary sleep loop). Then assert the served static marts contain `"seed": 42` and the page returns 200:
 
 ```bash
-docker compose up -d --build
-# poll up to ~3 min for the dashboard to serve (pipeline run + next build take time)
-ok=0
-for _ in $(seq 1 36); do
-  if curl -fsS http://localhost:3000 -o /tmp/cf-page.html 2>/dev/null; then ok=1; break; fi
-  sleep 5
-done
-test "$ok" = 1 && grep -q "seed 42" /tmp/cf-page.html && echo "STACK OK"
+docker compose up -d --build --wait --wait-timeout 480
+curl -fsS http://localhost:3000/data/marts.json -o /tmp/cf-marts.json
+curl -fsS http://localhost:3000 -o /dev/null
+grep -q '"seed": 42' /tmp/cf-marts.json && echo "STACK OK"
 ```
 
-Expected: after the pipeline completes and the dashboard builds, the final line prints `STACK OK` (HTTP 200 and the server-rendered footer contains `seed 42`). If it fails, inspect with `docker compose logs`.
+Expected: `docker compose up --wait` returns once the stack is ready (up to ~8 min for the build); the served `/data/marts.json` contains `"seed": 42`; the page returns 200; the final line prints `STACK OK`. If it fails, inspect with `docker compose logs` (both `pipeline` and `dashboard`).
 
 - [ ] **Step 4: Tear the stack down**
 
@@ -250,7 +246,7 @@ git commit -m "feat(docker): compose the pipeline and dashboard into a one-comma
 
 **Interfaces:**
 - Consumes: `docker-compose.yml` (Task 3) and both Dockerfiles.
-- Produces: a `compose` CI job that builds the stack, waits for it to serve, asserts HTTP 200 + `seed 42`, and always tears down. Runs alongside the existing `test` and `dashboard` jobs.
+- Produces: a `compose` CI job that builds the stack, waits for it (`--wait`), asserts the page returns 200 and the served `/data/marts.json` contains `"seed": 42`, and always tears down. Runs alongside the existing `test` and `dashboard` jobs.
 
 - [ ] **Step 1: Add the `compose` job**
 
@@ -262,29 +258,34 @@ In `.github/workflows/ci.yml`, add a new job under `jobs:` (a sibling of `test` 
     steps:
       - uses: actions/checkout@v4
       - name: Build and start the stack
-        run: docker compose up -d --build
-      - name: Wait for the dashboard and assert fresh marts render
+        run: docker compose up -d --build --wait --wait-timeout 480
+      - name: Assert the stack serves the marts
         run: |
-          ok=0
-          for _ in $(seq 1 36); do
-            if curl -fsS http://localhost:3000 -o page.html; then ok=1; break; fi
-            sleep 5
-          done
-          if [ "$ok" != 1 ]; then
-            echo "dashboard never served on :3000" >&2
+          if ! curl -fsS http://localhost:3000/data/marts.json -o marts.json; then
+            echo "dashboard did not serve /data/marts.json" >&2
             docker compose logs
             exit 1
           fi
-          if ! grep -q "seed 42" page.html; then
-            echo "served page did not contain the expected marts footer (seed 42)" >&2
+          if ! curl -fsS http://localhost:3000 -o /dev/null; then
+            echo "dashboard page did not return 200" >&2
             docker compose logs
             exit 1
           fi
-          echo "stack served fresh marts"
+          if ! grep -q '"seed": 42' marts.json; then
+            echo "served marts did not contain the expected contract (\"seed\": 42)" >&2
+            cat marts.json >&2
+            exit 1
+          fi
+          echo "stack served the marts"
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
       - name: Tear down
         if: always()
         run: docker compose down -v
 ```
+
+Note: `docker compose up --wait` blocks until the `pipeline` service exits 0 and the `dashboard` service is healthy (per its healthcheck), so no manual poll loop is needed. `--wait-timeout 480` bounds the wait at 8 minutes to cover a cold `next build` on a CI runner.
 
 - [ ] **Step 2: Validate the workflow YAML is well-formed**
 
@@ -296,13 +297,10 @@ Expected: prints `YAML OK` (no parse error).
 Run:
 
 ```bash
-docker compose up -d --build
-ok=0
-for _ in $(seq 1 36); do
-  if curl -fsS http://localhost:3000 -o /tmp/cf-page.html 2>/dev/null; then ok=1; break; fi
-  sleep 5
-done
-test "$ok" = 1 && grep -q "seed 42" /tmp/cf-page.html && echo "CI SEQUENCE OK"
+docker compose up -d --build --wait --wait-timeout 480
+curl -fsS http://localhost:3000/data/marts.json -o /tmp/cf-marts.json
+curl -fsS http://localhost:3000 -o /dev/null
+grep -q '"seed": 42' /tmp/cf-marts.json && echo "CI SEQUENCE OK"
 docker compose down -v
 ```
 
@@ -377,7 +375,7 @@ In `HANDOFF.md`, update the status line and ladder to reflect #4 shipped:
 - **Extension #4 shipped:** `docker compose up` runs the whole stack — a `pipeline`
   service builds the warehouse and exports the marts into a shared volume, then a
   `dashboard` service builds and serves the Next.js app over them. CI gained a
-  `compose` smoke-test job (HTTP 200 + fresh-marts footer). Spec/plan:
+  `compose` smoke-test job (page 200 + served marts contain `"seed": 42`). Spec/plan:
   `docs/superpowers/{specs,plans}/2026-07-01-docker-compose*.md`.
 ```
 
@@ -429,9 +427,10 @@ one command, no local Python or Node.
   one-command demo lean.
 
 ## Test plan
-- New `compose` CI job: `docker compose up -d --build`, wait for the dashboard,
-  assert HTTP 200 **and** the server-rendered footer contains `seed 42` (proves
-  fresh marts flowed build→render), then `docker compose down -v`.
+- New `compose` CI job: `docker compose up -d --build --wait`, then assert the
+  page returns 200 **and** the served static marts (`/data/marts.json`) contain
+  `"seed": 42` (the pipeline running to completion as part of `up` proves
+  freshness), then `docker compose down -v`.
 - Existing `test` (pytest) and `dashboard` (Vitest + build) jobs stay green.
 
 Spec: `docs/superpowers/specs/2026-07-01-docker-compose-design.md`
