@@ -125,6 +125,22 @@ cd dashboard && npm ci && npm run dev      # http://localhost:3000
 Tests: `cd dashboard && npm test` (Vitest + Testing Library) run against a committed
 fixture, so the Node suite needs no Python. CI builds and tests the app in its own job.
 
+## One command with docker compose
+
+The whole stack runs with a single command — no local Python or Node needed:
+
+```bash
+docker compose up --build      # builds the warehouse, exports marts, serves the app
+# open http://localhost:3000
+docker compose down -v         # stop and clean up
+```
+
+The `pipeline` service builds the DuckDB warehouse and exports the gold marts into
+a shared volume, then exits; the `dashboard` service waits for it to finish, then
+builds and serves the Next.js app over the fresh marts. Azurite (the blob landing
+zone) is not part of this default stack — see *Blob landing zone* above to exercise
+that path.
+
 ## Roadmap
 
 The core above is complete and stands alone. Shipped extensions:
@@ -132,10 +148,7 @@ The core above is complete and stands alone. Shipped extensions:
 1. ~~**PySpark transform stage**~~ — done (see *PySpark parity* above).
 2. ~~**Terraform blob landing zone (Azurite)**~~ — done (see *Blob landing zone* above).
 3. ~~**Next.js / TypeScript dashboard**~~ — done (see *Dashboard* above).
-
-Planned extensions:
-
-4. **docker-compose:** run the whole stack with one command.
+4. ~~**docker-compose**~~ — done (see *One command with docker compose* above).
 
 ## Development
 
