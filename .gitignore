@@ -17,3 +17,6 @@ dist/
 *.tfstate.*
 .terraform.lock.hcl
 crash.log
+
+# Local strategy/brief notes (kept out of the public repo)
+PROJECT_BRAINSTORM.md
