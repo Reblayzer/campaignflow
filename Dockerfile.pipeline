@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY pyproject.toml ./
+COPY src ./src
+RUN pip install --no-cache-dir .
+
+# run builds campaignflow.duckdb (+ data/raw, auto-created);
+# export writes marts.json into the shared /marts volume (parent auto-created).
+CMD python -m campaignflow run && python -m campaignflow export --out /marts/marts.json
