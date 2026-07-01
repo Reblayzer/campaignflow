@@ -63,6 +63,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Print Docker Compose version
+        run: docker compose version
       - name: Build and start the stack
         run: docker compose up -d --build --wait --wait-timeout 480
       - name: Assert the stack serves the marts

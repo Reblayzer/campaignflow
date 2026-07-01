@@ -3,7 +3,7 @@
 ## Goal
 Marketing-campaign ELT pipeline + star schema, built for the Arla "Entry IT Developer, IT Product for Marketing" application and interview. Must be runnable, public, and fully explainable.
 
-## Status: core + four extensions shipped; docker-compose is the last ladder item
+## Status: core + four extensions shipped; docker-compose is the last ladder item, now shipped
 - Public repo: https://github.com/Reblayzer/campaignflow (branch `main`, CI on GitHub Actions).
 - Core: 15 tests green, ruff clean. Runs via `python -m campaignflow run` then `python -m campaignflow report`.
 - **Extension #1 shipped (PR #1, merged):** PySpark silver->gold fact in `spark_fact.py`, parity-tested cent-exact against the DuckDB fact. Needs a JRE (Java 17/21); CI runs Temurin 21.
