@@ -58,3 +58,34 @@ jobs:
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start the stack
+        run: docker compose up -d --build --wait --wait-timeout 480
+      - name: Assert the stack serves the marts
+        run: |
+          if ! curl -fsS http://localhost:3000/data/marts.json -o marts.json; then
+            echo "dashboard did not serve /data/marts.json" >&2
+            docker compose logs
+            exit 1
+          fi
+          if ! curl -fsS http://localhost:3000 -o /dev/null; then
+            echo "dashboard page did not return 200" >&2
+            docker compose logs
+            exit 1
+          fi
+          if ! grep -q '"seed": 42' marts.json; then
+            echo "served marts did not contain the expected contract (\"seed\": 42)" >&2
+            cat marts.json >&2
+            exit 1
+          fi
+          echo "stack served the marts"
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
